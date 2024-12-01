@@ -12,15 +12,30 @@ def parse(ln):
 
 def p1(v):
     lns = get_lines(v)
-    chunks = v.split('\n\n')
     ans = 0
+    l, r = [], []
     for ln in lns:
-        item = parse(ln)
-        ans += 1
+        a, b = parse(ln)
+        l.append(a)
+        r.append(b)
+    l.sort()
+    r.sort()
+    for a, b in zip(l, r):
+        ans += abs(a - b)
     return ans
 
 def p2(v):
-    return p1(v)
+    lns = get_lines(v)
+    ans = 0
+    l, r = [], []
+    for ln in lns:
+        a, b = parse(ln)
+        l.append(a)
+        r.append(b)
+    C = Counter(r)
+    for a in l:
+        ans += a*C[a]
+    return ans
 
 
 if __name__ == '__main__':

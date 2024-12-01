@@ -16,7 +16,7 @@ def p1(v):
     ans = 0
     for ln in lns:
         item = parse(ln)
-        ans += 1
+        ans += 0
     return ans
 
 def p2(v):
