@@ -11,6 +11,7 @@ def parse(ln):
     return lazy_ints(multi_split(ln, ' '))
 
 def p1(v):
+    save_input(v)
     lns = get_lines(v)
     chunks = v.split('\n\n')
     ans = 0
@@ -22,6 +23,10 @@ def p1(v):
 def p2(v):
     return p1(v)
 
+LAST_INPUT = None
+def save_input(v):
+    global LAST_INPUT
+    LAST_INPUT = v
 
 if __name__ == '__main__':
     options = get_commands()
