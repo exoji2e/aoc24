@@ -79,6 +79,8 @@ class Grid:
                 yield Pos(r, c)
     def inside(self, p):
         return 0 <= p.r < self.R and 0 <= p.c < self.W
+    def find(self, char):
+        return next(self.findAll(char))
     def findAll(self, char):
         for p in self.coords():
             if self.g[p.r][p.c] == char:
