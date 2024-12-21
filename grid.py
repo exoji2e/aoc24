@@ -1,44 +1,39 @@
 DIRS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+from collections import namedtuple
 class Pos:
-    def __init__(self, r, c, dir=0):
+    def __init__(self, r, c):
         self.r = r
         self.c = c
-        self.dir = dir
     def fromTuple(t):
         return Pos(t[0], t[1])
     def neighbors(self):
-        for dr, dc in DIRS:
-            yield self + Pos(dr, dc)
-    def forward(self):
-        return self + Pos(*DIRS[self.dir])
-    def turnLeft(self):
-        return Pos(self.r, self.c, (self.dir - 1)%4)
-    def turnRight(self):
-        return Pos(self.r, self.c, (self.dir + 1)%4)
+        for delta in DIRS:
+            yield self + delta
     def __add__(self, other):
-        if isinstance(other, Pos):
-            return Pos(self.r + other.r, self.c + other.c, self.dir)
-        return Pos(self.r + other[0], self.c + other[1], self.dir)
+        if not isinstance(other, Pos):
+            return Pos(self.r + other[0], self.c + other[1])
+        return Pos(self.r + other.r, self.c + other.c)
     def __sub__(self, other):
-        return Pos(self.r - other.r, self.c - other.c, self.dir)
+        if not isinstance(other, Pos):
+            return Pos(self.r - other[0], self.c - other[1])
+        return Pos(self.r - other.r, self.c - other.c)
     def __eq__(self, other):
-        if isinstance(other, tuple):
-            return self.r == other[0] and self.c == other[1]
+        if not isinstance(other, Pos):
+            try:
+                return self.r == other[0] and self.c == other[1]
+            except:
+                return False
         return self.r == other.r and self.c == other.c
     def __lt__(self, other):
         return (self.r, self.c) < (other.r, other.c)
     def __hash__(self):
-        return hash((self.r, self.c, self.dir))
+        return hash((self.r, self.c))
     def __repr__(self):
         return f'({self.r}, {self.c})'
     def __iter__(self):
         return iter((self.r, self.c))
-    def __getitem__(self, rc):
-        if rc == 0:
-            return self.r
-        if rc == 1:
-            return self.c
-        raise IndexError
+    def __getitem__(self, idx):
+        return (self.r, self.c)[idx]
 
 from collections import *
 class Grid:
@@ -50,6 +45,11 @@ class Grid:
     def fromSize(R, C, char):
         return Grid([[char for _ in range(C)] for _ in range(R)])
     
+    '''
+    neigh_fn is a function from (pos, grid) to a list of new_positions
+    pass T to get distance to T, 
+    otherwise returns a dict of distances to all reachable positions
+    '''
     def bfs(self, S, T=None, neigh_fn=None):
         INF = 10**18
         if neigh_fn is None:
@@ -58,16 +58,46 @@ class Grid:
         q = [Pos.fromTuple(S)]
         dist[q[0]] = 0
         for p in q:
-            if p is T:
+            if p == T:
                 break
             for n in neigh_fn(p, self):
                 if n not in dist:
                     dist[n] = dist[p] + 1
                     q.append(n)
+        if T != None:
+            d = dist[Pos.fromTuple(T)]
+            return -1 if d == INF else d
+        return dist
+
+    '''
+    neigh_fn is a function from (pos, grid) to a list of (new_pos, weight) pairs
+    pass T to get distance to T, 
+    otherwise returns a dict of distances to all reachable positions
+    '''
+    def dijkstra(self, S, T=None, neigh_fn=None):
+        import heapq
+        INF = 10**18
+        if neigh_fn is None:
+            neigh_fn = lambda p, self: [(n, 1) for n in self.neighbors(p)]
+        dist = defaultdict(lambda: INF)
+        pq = []
+        def add(node, dst):
+            if dst < dist[node]:
+                dist[node] = dst
+                heapq.heappush(pq, (dst, node))
+        add(Pos.fromTuple(S), 0)
+
+        while pq:
+            D, u = heapq.heappop(pq)
+            if u == T: return D
+            if D != dist[u]: continue
+            for v, w in neigh_fn(u, self):
+                add(v, D + w)
         if T is not None:
             d = dist[Pos.fromTuple(T)]
             return -1 if d == INF else d
         return dist
+
 
     def neighbors(self, p):
         for n in p.neighbors():
@@ -100,9 +130,11 @@ class Grid:
             return self.getAt(Pos(*rc))
         if isinstance(rc, int):
             return self.g[rc]
-    def __setitem__(self, rc, val):
-        p = rc
-        if isinstance(rc, tuple):
-            p = Pos(*rc)
+    def __setitem__(self, p, val):
+        if isinstance(p, int):
+            self.g[p] = val
+            return
+        if isinstance(p, tuple):
+            p = Pos.fromTuple(p)
         self.g[p.r][p.c] = val
         
